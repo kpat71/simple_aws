@@ -1,0 +1,319 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation for Network.
+Parameters:
+  VpcSubnet:
+    Description: Network CIDR
+    Type: String
+    Default: ''
+  fe1:
+    Description: Frontend Az1 network CIDR
+    Type: String
+    Default: ''
+  fe2:
+    Description: Frontend Az2 network CIDR
+    Type: String
+    Default: ''
+  app1:
+    Description: App Az1 network CIDR
+    Type: String
+    Default: ''
+  app2:
+    Description: App Az2 network CIDR
+    Type: String
+    Default: ''
+  be1:
+    Description: Backend Az1 network CIDR
+    Type: String
+    Default: ''
+  be2:
+    Description: Backend Az2 network CIDR
+    Type: String
+    Default: ''
+  DnsDomainName:
+    Description: DHCP server domain name
+    Type: String
+    Default: ''
+  az1:
+    Description: Availability Zone 1
+    Type: String
+    Default: ''
+  az2:
+    Description: Availability Zone 2
+    Type: String
+    Default: ''
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VpcSubnet
+      InstanceTenancy: default
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: VPC
+  feIdaz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: fe1
+      AvailabilityZone:
+        Ref: az1
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: fe1
+  feIdaz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: fe2
+      AvailabilityZone:
+        Ref: az2
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: fe2
+  appIdAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: app1
+      AvailabilityZone:
+        Ref: az1
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: app1
+  appIdAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: app2
+      AvailabilityZone:
+        Ref: az2
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: app2
+  beIdAz1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: be1
+      AvailabilityZone:
+        Ref: az1
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: be1
+  beIdAz2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock:
+        Ref: be2
+      AvailabilityZone:
+        Ref: az2
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: be2
+
+  # Internet gateway to outgoing traffic
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: {}
+  DhcpOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName:
+        Ref: DnsDomainName
+      DomainNameServers:
+      - AmazonProvidedDNS
+      Tags:
+      - Key: Name
+        Value: Internetgateway
+  # Routetable for Frontend networks
+  RouteFrontSubnets1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: FrontSubnets
+  # Routetable for private networks
+  RoutePrivateSubnets1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: PrivateSubnets
+
+  # Az1 and Az2 fe1 and fe2 network route to internetgateway
+  route1:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId:
+        Ref: RouteFrontSubnets1
+      GatewayId:
+        Ref: InternetGateway
+    DependsOn: gateway1
+
+  # Add Az1 Applic subnet to RouteFrontSubnets1 table
+  subnetroute1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteFrontSubnets1
+      SubnetId:
+        Ref: feIdaz1
+  # Add Az2 Applic subnet to RouteFrontSubnets1 table
+  subnetroute2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RouteFrontSubnets1
+      SubnetId:
+        Ref: feIdaz2
+  # Add Az1 App subnet to AppAz1Route table
+  subnetroute4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RoutePrivateSubnets1
+      SubnetId:
+        Ref: appIdAz1
+  # Add Az2 App subnet to AppAz2Route table
+  subnetroute5:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RoutePrivateSubnets1
+      SubnetId:
+        Ref: appIdAz2
+
+  # Add Az1 App subnet to BeAz1Route table
+  subnetroute7:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RoutePrivateSubnets1
+      SubnetId:
+        Ref: beIdAz1
+  # Add Az2 App subnet to BeAz2Route table
+  subnetroute8:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: RoutePrivateSubnets1
+      SubnetId:
+        Ref: beIdAz2
+
+  # ACL
+  subnetacl1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId:
+        Fn::GetAtt:
+        - VPC
+        - DefaultNetworkAcl
+      SubnetId:
+        Ref: beIdAz1
+  subnetacl2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId:
+        Fn::GetAtt:
+        - VPC
+        - DefaultNetworkAcl
+      SubnetId:
+        Ref: beIdAz2
+  subnetacl3:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId:
+        Fn::GetAtt:
+        - VPC
+        - DefaultNetworkAcl
+      SubnetId:
+        Ref: feIdaz1
+  subnetacl4:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId:
+        Fn::GetAtt:
+        - VPC
+        - DefaultNetworkAcl
+      SubnetId:
+        Ref: feIdaz2
+  gateway1:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: VPC
+      InternetGatewayId:
+        Ref: InternetGateway
+
+  dhchpassoc1:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      VpcId:
+        Ref: VPC
+      DhcpOptionsId:
+        Ref: DhcpOptions
+# output values
+Outputs:
+  VpcId:
+    Value:
+      Ref: VPC
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-VPCID"
+  feIdaz1:
+    Value:
+      Ref: feIdaz1
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-feIdaz1"
+  feIdaz2:
+    Value:
+      Ref: feIdaz2
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-feIdaz2"
+  appIdAz1:
+    Value:
+      Ref: appIdAz1
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-appIdAz1"
+  appIdAz2:
+    Value:
+      Ref: appIdAz2
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-appIdAz2"        
+  beIdAz1:
+    Value:
+      Ref: beIdAz1
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-beIdAz1"
+  beIdAz2:
+    Value:
+      Ref: beIdAz2
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-beIdAz2"

@@ -1,0 +1,23 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template for EIP
+
+Parameters:
+  EipName1:
+    Description: EIP 1
+    Type: String
+
+Resources:
+  EIP:
+    Type: AWS::EC2::EIP
+
+Outputs:
+  EIP:
+    Value:
+      Ref: EIP
+    Export:
+      Name:
+        Fn::Sub:
+        - ${AWS::StackName}-${Name}
+        - Name:
+            Ref: EipName1

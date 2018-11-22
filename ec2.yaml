@@ -1,0 +1,98 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template for EC2 instance
+Parameters:
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    AllowedValues:
+    - t3.nano
+    ConstraintDescription: must be a valid EC2 instance type.
+    Default: t3.nano
+  ImageId:
+    Description: EC2 instance Image ID
+    Type: String
+  VpcId:
+    Type: String
+    Description: VPC id
+  KeyName:
+    Type: String
+    Description: Access key name
+    Default: ''
+  AssociatePublicIpAddress:
+    Type: String
+    Description: Select a default subnet ID.
+    Default: false
+  SubnetId:
+    Type: String
+    Description: Select a default subnet ID.
+  serverEIP:
+    Description: server EIP
+    Type: String
+  SecurityGroup:
+    Description: Allow ssh to client host
+    Type: String
+  TagEnvironment:
+    Description: Enviroment tag
+    Type: String
+
+Resources:
+  ec2:    
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: InstanceType
+      KeyName:
+        Ref: KeyName
+      BlockDeviceMappings: 
+        - DeviceName: "/dev/xvda"
+          Ebs: 
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+            VolumeSize: 20 
+      NetworkInterfaces:
+      - AssociatePublicIpAddress:
+          Ref: AssociatePublicIpAddress
+        DeviceIndex: '0'
+        GroupSet:
+        - Fn::ImportValue:
+            Ref: SecurityGroup
+        SubnetId:
+          Fn::ImportValue:
+            Ref: SubnetId
+      ImageId:
+        Ref: ImageId
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash -xe
+          #yum update -y
+          cd /tmp
+          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+          python get-pip.py
+          pip install 'ansible==2.7.2'
+          yum install -y git
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          git clone https://github.com/kpat71/ansible.git
+          cd /tmp/ansible
+          ansible-playbook -vvvv --inventory-file inventories/${TagEnvironment}/inventory site.yml
+      Tags:
+        - Key: Environment
+          Value:
+            Ref: TagEnvironment
+
+  EIPtoEc2:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: 
+        Ref: ec2
+      EIP:
+        Fn::ImportValue:
+          Ref: serverEIP
+Outputs:
+  Sshgw1Instanceid:
+    Description: EC2 instance name
+    Value:
+      Ref: ec2
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ec2"
