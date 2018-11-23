@@ -70,7 +70,9 @@ Resources:
           #!/bin/bash -xe
           # Update
           if [ -f '/etc/redhat-release' ]; then yum update -y; fi
-          if [ -f '/etc/debian_version' ]; then apt-get update && apt-get dist-upgrade; fi 
+          if [ -f '/etc/debian_version' ]; then export DEBIAN_FRONTEND=noninteractive; fi 
+          if [ -f '/etc/debian_version' ]; then apt-get update && apt-get upgrade -y; fi
+          if [ -f '/etc/debian_version' ]; then apt-get install python -y; fi 
           cd /tmp
           # install PIP
           curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py

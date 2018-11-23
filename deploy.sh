@@ -24,6 +24,11 @@ else
    exit 
 fi
 
+# Amazon Linux
+#IMAGEID="ami-0a5e707736615003c"
+# Ubunu 
+IMAGEID="ami-0773391ae604c49a4"
+
 aws cloudformation deploy \
     --region $REGION \
     --capabilities CAPABILITY_IAM \
@@ -86,7 +91,7 @@ aws cloudformation deploy \
     --template-file $TEMPLATE \
     --parameter-overrides \
         AssociatePublicIpAddress=false \
-        ImageId=ami-0a5e707736615003c \
+        ImageId="$IMAGEID" \
         InstanceType=t3.nano \
         KeyName=Default \
         SecurityGroup="$ENV"-SG-HttpsHttpSshAll \
