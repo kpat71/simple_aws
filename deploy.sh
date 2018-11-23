@@ -25,9 +25,9 @@ else
 fi
 
 # Amazon Linux
-#IMAGEID="ami-0a5e707736615003c"
+IMAGEID="ami-0a5e707736615003c"
 # Ubunu 
-IMAGEID="ami-0773391ae604c49a4"
+#IMAGEID="ami-0773391ae604c49a4"
 
 aws cloudformation deploy \
     --region $REGION \
