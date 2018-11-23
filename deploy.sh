@@ -89,7 +89,7 @@ aws cloudformation deploy \
         ImageId=ami-0a5e707736615003c \
         InstanceType=t3.nano \
         KeyName=Default \
-        SecurityGroup="$ENV"-SG- \
+        SecurityGroup="$ENV"-SG-HttpsHttpSshAll \
         serverEIP="$ENV"-EIP-WebServer \
         SubnetId="$ENV"-VPC-feIdaz1 \
         TagEnvironment="$ENV" \

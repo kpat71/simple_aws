@@ -72,9 +72,10 @@ Resources:
           pip install 'ansible==2.7.2'
           yum install -y git
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          rm -rf /tmp/ansible
           git clone https://github.com/kpat71/ansible.git
           cd /tmp/ansible
-          ansible-playbook -vvvv --inventory-file inventories/${TagEnvironment}/inventory site.yml
+          ansible-playbook -i inventories/test/inventory site.yml
       Tags:
         - Key: Environment
           Value:
