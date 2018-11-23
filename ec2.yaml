@@ -68,15 +68,19 @@ Resources:
       UserData:
         Fn::Base64: |
           #!/bin/bash -xe
-          #yum update -y
+          # Update
+          if [ -f '/etc/redhat-release' ]; then yum update -y; fi
+          if [ -f '/etc/debian_version' ]; then apt-get update && apt-get dist-upgrade; fi 
           cd /tmp
           # install PIP
           curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-          python get-pip.py
+          python3 get-pip.py
           # Install ansible
+          if [ -f '/etc/debian_version' ]; then pip install 'cryptography==2.4.2'; fi
           pip install 'ansible==2.7.2'
           # Install GIT client
-          yum install -y git
+          if [ -f '/etc/debian_version' ]; then apt-get install -y git; fi
+          if [ -f '/etc/redhat-release' ]; then yum install -y git; fi
           # Add github key to known hosts
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
           # Remove existing ansible installation 
@@ -89,7 +93,7 @@ Resources:
           # Add variable to put log files to log file
           export ANSIBLE_LOG_PATH=/var/log/ansible/ansible.log
           #  RUN ansible playbook 
-          ansible-playbook -i inventories/test/inventory site.yml
+          ansible-playbook -i inventories/test/hosts site.yml
           AnsibleCommand:
             Ref: AnsibleCommand
       Tags:
