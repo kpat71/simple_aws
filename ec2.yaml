@@ -75,6 +75,8 @@ Resources:
           rm -rf /tmp/ansible
           git clone https://github.com/kpat71/ansible.git
           cd /tmp/ansible
+          mkdir -p /var/log/ansible/
+          export ANSIBLE_LOG_PATH=/var/log/ansible/ansible.log
           ansible-playbook -i inventories/test/inventory site.yml
       Tags:
         - Key: Environment
