@@ -94,5 +94,6 @@ aws cloudformation deploy \
         SubnetId="$ENV"-VPC-feIdaz1 \
         TagEnvironment="$ENV" \
         VpcId="$ENV"-VPC-VPCID \
+        AnsibleCommand="ansible-playbook -i inventories/"$ENV"/hosts site.yml" \
     --tags \
         Environment="$ENV"
