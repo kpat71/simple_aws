@@ -96,8 +96,6 @@ Resources:
           export ANSIBLE_LOG_PATH=/var/log/ansible/ansible.log
           #  RUN ansible playbook 
           ansible-playbook -i inventories/test/hosts site.yml
-          AnsibleCommand:
-            Ref: AnsibleCommand
       Tags:
         - Key: Environment
           Value:
